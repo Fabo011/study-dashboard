@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Visualisierung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 800px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(#4caf50 70%, #e0e0e0 0%);
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            position: relative;
+            height: 25px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        /* Beispielwerte */
+        .progress-bar-inner {
+            width: 60%; /* Tatsächlicher Fortschritt */
+            height: 100%;
+            background-color: #4caf50; /* Standardfarbe */
+            text-align: center;
+            line-height: 25px;
+            color: white;
+            font-weight: bold;
+            border-radius: 15px 0 0 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Wenn der Fortschritt unter dem Soll-Fortschritt ist, ändern wir die Farbe auf Rot */
+        .progress-bar-inner.low-progress {
+            background-color: #f44336; /* Rot, wenn der Fortschritt zu niedrig ist */
+        }
+
+        .progress-bar-marker {
+            position: absolute;
+            top: 0;
+            left: 75%; /* Beispiel: Soll-Fortschritt */
+            width: 2px;
+            height: 100%;
+            background-color: red;
+            z-index: 2;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        /* Button Styles */
+        .button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        /* Popup Styles */
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        .close-button {
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        function openPopup() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        function updateCourses() {
+            alert("Kurs fortschritt aktualisiert!"); // Beispiel-Feedback
+            // Hier kann die Logik zum Aktualisieren der Kurse implementiert werden.
+        }
+    </script>
+</head>
+<body>
+
+<div class="dashboard">
+    <!-- Anzahl der noch zu absolvierenden Kurse -->
+    <div class="card">
+        <div class="circle">4</div>
+        <div class="subtitle">Verbleibende Kurse</div>
+        <p>Übersicht über die noch zu absolvierenden Kurse.</p>
+    </div>
+
+    <!-- Geschätzter Zeitaufwand -->
+    <div class="card">
+        <div class="subtitle">Geschätzter Zeitaufwand</div>
+        <p>Zeitaufwand pro Kurs: 10 Stunden</p>
+        <p>Fixe Stundenanzahl pro Woche: 5 Stunden</p>
+        <p>Voraussichtliches Ende: 3 Monate</p>
+        <button class="button" onclick="openPopup()">Config bearbeiten</button>
+        <button class="button" onclick="updateCourses()">Kurs abgeschlossen</button>
+    </div>
+
+    <!-- Fortschrittsanzeige mit Zeitplan -->
+    <div class="card">
+        <div class="subtitle">Fortschritt im Vergleich zum Zeitplan</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-inner low-progress">60%</div> <!-- Beispiel: Niedriger Fortschritt -->
+            <div class="progress-bar-marker"></div> <!-- Soll-Fortschritt -->
+        </div>
+        <p>Studienfortschritt (grün oder rot) im Vergleich zum Soll-Fortschritt (rote Markierung).</p>
+    </div>
+</div>
+
+<!-- Popup für das Config-File -->
+<div id="overlay" class="overlay" onclick="closePopup()"></div>
+<div id="popup" class="popup">
+    <h3>Config-Datei bearbeiten</h3>
+    <p>Hier können die Einstellungen zur Studienkonfiguration vorgenommen werden.</p>
+    <!-- Beispiel-Eingabefelder für die Konfiguration -->
+    <label for="endDate">Studien-Ende (Datum):</label>
+    <input type="date" id="endDate"><br><br>
+    <label for="maxHours">Maximale Stundenanzahl pro Woche:</label>
+    <input type="number" id="maxHours"><br><br>
+    <label for="remainingCourses">Anzahl noch zu absolvierender Kurse:</label>
+    <input type="number" id="remainingCourses"><br><br>
+    <button class="close-button" onclick="closePopup()">Speichern</button>
+</div>
+
+</body>
+</html>
+
+
