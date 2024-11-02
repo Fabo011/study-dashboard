@@ -6,7 +6,7 @@ Make sure that you have python and pip installed on your machine.
 python3 -m venv venv
 ```
 
-### Avtivate env
+### Activate env
 
 Windows
 ```bash
