@@ -11,8 +11,9 @@ class ConfigManager:
         self.config_file = config_file
         self.end_date = None
         self.weekly_hours = None
-        self.remaining_courses = 35  # Default remaining courses
-        self.max_courses = 35  # Default maximum number of courses
+        self.remaining_courses = None
+        self.max_courses = None
+        self.hours_per_course = None  # New attribute for hours per course
         self.load_config()
 
     def load_config(self):
@@ -23,30 +24,34 @@ class ConfigManager:
                     self.end_date = datetime.strptime(row['end_date'], '%Y-%m-%d') if row['end_date'] else None
                     self.weekly_hours = int(row['weekly_hours']) if row['weekly_hours'] else None
                     self.remaining_courses = int(row['remaining_courses']) if row['remaining_courses'] else 35
-                    self.max_courses = int(row['max_courses']) if row['max_courses'] else 35  # Default to 35 if not found
+                    self.max_courses = int(row['max_courses']) if row['max_courses'] else 35
+                    self.hours_per_course = float(row['hours_per_course']) if row['hours_per_course'] else None  # Load new field
         except (FileNotFoundError, KeyError, ValueError):
             print("Configuration file not found or invalid format. Please set configuration data.")
 
     def save_config(self):
-        # Save the config file with all relevant values including max_courses
+        # Save the config file with all relevant values including hours_per_course
         with open(self.config_file, mode='w', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['end_date', 'weekly_hours', 'remaining_courses', 'max_courses'])
+            writer = csv.DictWriter(file, fieldnames=['end_date', 'weekly_hours', 'remaining_courses', 'max_courses', 'hours_per_course'])
             writer.writeheader()
             writer.writerow({
                 'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else "",
                 'weekly_hours': self.weekly_hours,
                 'remaining_courses': self.remaining_courses,
-                'max_courses': self.max_courses
+                'max_courses': self.max_courses,
+                'hours_per_course': self.hours_per_course  # Save new field
             })
 
-    def edit_config(self, end_date, weekly_hours, max_courses):
+    def edit_config(self, end_date, weekly_hours, max_courses, hours_per_course=None):
         self.end_date = datetime.strptime(end_date, '%Y-%m-%d')
         self.weekly_hours = weekly_hours
         self.max_courses = max_courses
+        if hours_per_course is not None:
+            self.hours_per_course = hours_per_course
         self.save_config()
 
     def is_config_complete(self) -> bool:
-        return all([self.end_date, self.weekly_hours, self.remaining_courses, self.max_courses])
+        return all([self.end_date, self.weekly_hours, self.remaining_courses, self.max_courses, self.hours_per_course])
 
 # --- CourseManager ---
 class CourseManager:
@@ -69,9 +74,11 @@ class ProgressCalculator:
         self.course_manager = course_manager
 
     def calculate_estimated_end_date(self) -> datetime:
-        if self.config_manager.weekly_hours and self.config_manager.remaining_courses:
-            total_weeks_needed = self.config_manager.remaining_courses / self.config_manager.weekly_hours
-            return datetime.now() + timedelta(weeks=total_weeks_needed)
+        if self.config_manager.weekly_hours and self.config_manager.remaining_courses and self.config_manager.hours_per_course:
+            total_hours_remaining = self.config_manager.remaining_courses * self.config_manager.hours_per_course
+            time_to_finish = total_hours_remaining / self.config_manager.weekly_hours
+            estimated_end = datetime.now() + timedelta(weeks=time_to_finish)
+            return estimated_end
         return None
 
     def check_schedule_status(self) -> str:
@@ -80,7 +87,15 @@ class ProgressCalculator:
             if estimated_end <= self.config_manager.end_date:
                 return "You are on track!"
             else:
-                return "Adjust your weekly hours to stay on schedule."
+                # Calculate over/under time in hours
+                total_hours_remaining = self.config_manager.remaining_courses * self.config_manager.hours_per_course
+                time_to_finish = total_hours_remaining / self.config_manager.weekly_hours
+                overdue_hours = (estimated_end - self.config_manager.end_date).days * 24  # Convert days to hours
+                overdue_hours_int = int(overdue_hours)  # Round down to nearest integer
+                if overdue_hours_int > 0:
+                    return f"Not on time! Overdue by {overdue_hours_int} hours."
+                else:
+                    return "On track"
         return "Configuration data is incomplete."
 
 # --- DashInterface ---
@@ -102,6 +117,8 @@ class DashInterface:
             dcc.Input(id="weekly-hours-input", type="number", value=self.config_manager.weekly_hours),
             html.Label("Maximum Courses:"),
             dcc.Input(id="max-courses-input", type="number", value=self.config_manager.max_courses),
+            html.Label("Hours per Course:"),
+            dcc.Input(id="hours-per-course-input", type="number", value=self.config_manager.hours_per_course, step=0.1),
             html.Button("Save", id="save-config-button"),
             html.Div(id="config-save-output")
         ], style={'padding': '20px', 'border': '1px solid black'})
@@ -112,8 +129,10 @@ class DashInterface:
     def render_dashboard(self):
         self.app.layout = html.Div([
             html.H1("Course Progress Dashboard"),
+            html.H2("Study Status"),  # Headline "Study Status"
+            html.Div(id="study-status-circle", style={'font-size': '2rem'}),  # Circle for status
+            html.Div(id="schedule-status"),  # Only this section should display the status
             self.complete_course_button(),
-            html.Div(id="schedule-status"),
             dcc.Graph(id="circle-visualization"),
             self.open_config_editor(),
             dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
@@ -124,21 +143,24 @@ class DashInterface:
             Output("schedule-status", "children"),
             Output("circle-visualization", "figure"),
             Output("config-save-output", "children"),
+            Output("study-status-circle", "children"),
             Input("complete-course-button", "n_clicks"),
             Input("save-config-button", "n_clicks"),
             Input("interval-component", "n_intervals"),  # To allow automatic updates
             State("end-date-input", "value"),
             State("weekly-hours-input", "value"),
             State("max-courses-input", "value"),
+            State("hours-per-course-input", "value"),
             prevent_initial_call=True
         )(self.update_dashboard)
 
-    def update_dashboard(self, n_clicks_complete, n_clicks_save, n_intervals, end_date, weekly_hours, max_courses):
+    def update_dashboard(self, n_clicks_complete, n_clicks_save, n_intervals, end_date, weekly_hours, max_courses, hours_per_course):
         ctx = dash.callback_context
         # Initialize response variables
         status = self.progress_calculator.check_schedule_status()
         figure = self.create_circle_figure()
         message = ""
+        study_status_circle = ""
 
         # Handle course completion
         if ctx.triggered and "complete-course-button" in ctx.triggered[0]['prop_id']:
@@ -147,33 +169,52 @@ class DashInterface:
 
         # Save the config
         if ctx.triggered and "save-config-button" in ctx.triggered[0]['prop_id']:
-            if end_date and weekly_hours and max_courses:
+            if end_date and weekly_hours and max_courses and hours_per_course:
                 try:
-                    self.config_manager.edit_config(end_date, int(weekly_hours), int(max_courses))
+                    self.config_manager.edit_config(end_date, int(weekly_hours), int(max_courses), float(hours_per_course))
                     message = "Configuration saved successfully."
                 except ValueError:
                     message = "Error: Invalid input values."
 
-        return (status, figure, message)
+        # Check if the student is on track or overdue
+        estimated_end = self.progress_calculator.calculate_estimated_end_date()
+        if estimated_end and self.config_manager.end_date:
+            total_hours_remaining = self.config_manager.remaining_courses * self.config_manager.hours_per_course
+            time_to_finish = total_hours_remaining / self.config_manager.weekly_hours
+            overdue_hours = (estimated_end - self.config_manager.end_date).days * 24  # Convert to hours
+            overdue_hours_int = int(overdue_hours)  # Round down to nearest integer
+
+            if overdue_hours_int > 0:
+                study_status_circle = html.Div(style={'width': '30px', 'height': '30px', 'borderRadius': '50%', 'backgroundColor': 'red'})
+                status = f"Not on time! Overdue by {overdue_hours_int} hours."
+            else:
+                time_advantage = (self.config_manager.end_date - estimated_end).days * 24  # Advantage in hours
+                time_advantage_int = int(time_advantage)
+                study_status_circle = html.Div(style={'width': '30px', 'height': '30px', 'borderRadius': '50%', 'backgroundColor': 'green'})
+                status = f"On track! Time advantage: {time_advantage_int} hours."
+
+            finish_date = estimated_end
+            if overdue_hours_int > 0:
+                finish_date = estimated_end + timedelta(hours=overdue_hours_int)  # Add overdue hours
+            status += f" Expected finish date: {finish_date.strftime('%Y-%m-%d')}."
+
+        return status, figure, message, study_status_circle
 
     def create_circle_figure(self):
         completed_courses = self.config_manager.max_courses - self.config_manager.remaining_courses
         remaining_courses = self.config_manager.remaining_courses
 
-        # Create a pie chart for circular visualization
         figure = go.Figure(data=[go.Pie(
             labels=['Completed Courses', 'Remaining Courses'],
             values=[completed_courses, remaining_courses],
             marker=dict(colors=['green', 'grey']),
-            hole=0.4  # Donut chart:)
+            hole=0.4
         )])
         figure.update_layout(title='Course Completion Status',
                              annotations=[dict(text=f"{completed_courses}/{self.config_manager.max_courses} Completed", 
                                                font_size=20, showarrow=False)])
         return figure
 
-
 if __name__ == "__main__":
     dash_app = DashInterface()
     dash_app.app.run_server(debug=True)
-
