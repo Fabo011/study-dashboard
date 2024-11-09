@@ -25,6 +25,11 @@ Install requirements
 pip3 install -r requirements.txt
 ```
 
+### Start
+```bash
+python3 main.py
+```
+
 ---
 
 <br>
