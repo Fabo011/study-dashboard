@@ -85,17 +85,10 @@ class ProgressCalculator:
         estimated_end = self.calculate_estimated_end_date()
         if estimated_end and self.config_manager.end_date:
             if estimated_end <= self.config_manager.end_date:
-                return "You are on track!"
+                return f"On track! Expected finish date: {estimated_end.strftime('%Y-%m-%d')}."
             else:
-                # Calculate over/under time in hours
-                total_hours_remaining = self.config_manager.remaining_courses * self.config_manager.hours_per_course
-                time_to_finish = total_hours_remaining / self.config_manager.weekly_hours
-                overdue_hours = (estimated_end - self.config_manager.end_date).days * 24  # Convert days to hours
-                overdue_hours_int = int(overdue_hours)  # Round down to nearest integer
-                if overdue_hours_int > 0:
-                    return f"Not on time! Overdue by {overdue_hours_int} hours."
-                else:
-                    return "On track"
+                # Overdue status - just show the expected finish date
+                return f"Not on time! Expected finish date: {estimated_end.strftime('%Y-%m-%d')}."
         return "Configuration data is incomplete."
 
 # --- DashInterface ---
@@ -176,27 +169,16 @@ class DashInterface:
                 except ValueError:
                     message = "Error: Invalid input values."
 
-        # Check if the student is on track or overdue
+        # Only calculate hours for the user output, not affecting circle chart
         estimated_end = self.progress_calculator.calculate_estimated_end_date()
         if estimated_end and self.config_manager.end_date:
-            total_hours_remaining = self.config_manager.remaining_courses * self.config_manager.hours_per_course
-            time_to_finish = total_hours_remaining / self.config_manager.weekly_hours
-            overdue_hours = (estimated_end - self.config_manager.end_date).days * 24  # Convert to hours
-            overdue_hours_int = int(overdue_hours)  # Round down to nearest integer
+            status = self.progress_calculator.check_schedule_status()
 
-            if overdue_hours_int > 0:
-                study_status_circle = html.Div(style={'width': '30px', 'height': '30px', 'borderRadius': '50%', 'backgroundColor': 'red'})
-                status = f"Not on time! Overdue by {overdue_hours_int} hours."
-            else:
-                time_advantage = (self.config_manager.end_date - estimated_end).days * 24  # Advantage in hours
-                time_advantage_int = int(time_advantage)
+            # Determine the color of the circle (red or green)
+            if estimated_end <= self.config_manager.end_date:
                 study_status_circle = html.Div(style={'width': '30px', 'height': '30px', 'borderRadius': '50%', 'backgroundColor': 'green'})
-                status = f"On track! Time advantage: {time_advantage_int} hours."
-
-            finish_date = estimated_end
-            if overdue_hours_int > 0:
-                finish_date = estimated_end + timedelta(hours=overdue_hours_int)  # Add overdue hours
-            status += f" Expected finish date: {finish_date.strftime('%Y-%m-%d')}."
+            else:
+                study_status_circle = html.Div(style={'width': '30px', 'height': '30px', 'borderRadius': '50%', 'backgroundColor': 'red'})
 
         return status, figure, message, study_status_circle
 
