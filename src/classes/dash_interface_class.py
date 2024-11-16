@@ -7,7 +7,19 @@ from .course_manager_class import CourseManager
 from .progress_calculator_class import ProgressCalculator
 
 class DashInterface:
+    """
+    DashInterface initializes and manages a Dash web application for visualizing and managing study progress.
+      
+    Attributes:
+        config_manager (ConfigManager): Manages configuration settings for the application.
+        course_manager (CourseManager): Manages course data and progress.
+        progress_calculator (ProgressCalculator): Calculates and tracks progress statistics.
+    """
     def __init__(self):
+        """
+        Initializes the DashInterface, setting up the configuration, course management, 
+        and progress tracking systems. Configures the Dash app and renders the dashboard.
+        """
         self.config_manager = ConfigManager()
         self.course_manager = CourseManager(self.config_manager)
         self.progress_calculator = ProgressCalculator(self.config_manager, self.course_manager)
@@ -15,8 +27,12 @@ class DashInterface:
         self.render_dashboard()
 
     def render_dashboard(self):
-        """Sets up the layout and initial callbacks for the Dash app."""
+        """
+        Configures the layout and callbacks of the Dash application.
 
+        Sets up the dashboard structure, initializes UI elements, and binds callbacks 
+        for interactivity and data updates.
+        """
         self.app.layout = html.Div([
             html.H1("Study Dashboard", style={'text-align': 'center'}),
             dcc.Store(id="modal-visible", data=False),
@@ -72,6 +88,12 @@ class DashInterface:
         )(self.toggle_modal_visibility)
 
     def open_config_editor(self):
+        """
+        Creates a modal for editing the configuration settings.
+
+        Returns:
+            html.Div: A Dash HTML Div containing the configuration editor modal.
+        """
         return html.Div([
             html.Div(id="config-modal", children=[
                 html.Div([
@@ -106,6 +128,25 @@ class DashInterface:
         ])
 
     def update_dashboard(self, n_clicks_complete, n_clicks_save, n_clicks_edit, n_clicks_close, n_intervals, modal_visible, end_date, weekly_hours, max_courses, hours_per_course):
+      """
+      Updates the dashboard based on user interactions and configuration changes.
+
+      Args:
+            n_clicks_complete (int): Number of times the complete course button was clicked.
+            n_clicks_save (int): Number of times the save config button was clicked.
+            n_clicks_edit (int): Number of times the edit config button was clicked.
+            n_clicks_close (int): Number of times the close config button was clicked.
+            n_intervals (int): Number of intervals passed since the app started.
+            modal_visible (bool): Whether the config modal is visible.
+            end_date (str): The end date of the study contract.
+            weekly_hours (int): Weekly hours available for study.
+            max_courses (int): Maximum number of courses.
+            hours_per_course (float): Hours required per course.
+
+      Returns:
+            tuple: Updated status, configuration data, circle visualization figure, 
+            message, study status circle, and modal style.
+      """
       ctx = dash.callback_context
       status = self.progress_calculator.check_schedule_status()
       figure = self.create_circle_figure()
@@ -148,6 +189,18 @@ class DashInterface:
       return status, config_data, figure, message, study_status_circle, modal_style
 
     def toggle_modal_visibility(self, n_clicks_edit, n_clicks_save, n_clicks_close, modal_visible):
+        """
+        Toggles the visibility of the configuration modal based on user interactions.
+
+        Args:
+            n_clicks_edit (int): Number of times the edit config button was clicked.
+            n_clicks_save (int): Number of times the save config button was clicked.
+            n_clicks_close (int): Number of times the close config button was clicked.
+            modal_visible (bool): Current modal visibility state.
+
+        Returns:
+            bool: Updated modal visibility state.
+        """
         ctx = dash.callback_context
         if ctx.triggered:
             trigger = ctx.triggered[0]['prop_id']
@@ -158,6 +211,12 @@ class DashInterface:
         return modal_visible
 
     def create_circle_figure(self):
+        """
+        Creates a pie chart visualization for completed and remaining courses.
+
+        Returns:
+            plotly.graph_objs.Figure: A Plotly figure object representing the pie chart.
+        """
         completed_courses = self.config_manager.max_courses - self.config_manager.remaining_courses
         remaining_courses = self.config_manager.remaining_courses
 
