@@ -8,7 +8,7 @@ class ConfigManager:
         self.weekly_hours = None
         self.remaining_courses = None
         self.max_courses = None
-        self.hours_per_course = None  # New attribute for hours per course
+        self.hours_per_course = None
         self.load_config()
 
     def load_config(self):
@@ -35,6 +35,7 @@ class ConfigManager:
                 'max_courses': self.max_courses,
                 'hours_per_course': self.hours_per_course
             })
+        self.load_config()
 
     def edit_config(self, end_date, weekly_hours, max_courses, hours_per_course=None):
         self.end_date = datetime.strptime(end_date, '%Y-%m-%d')
