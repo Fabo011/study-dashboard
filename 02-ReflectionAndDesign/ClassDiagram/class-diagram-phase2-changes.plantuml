@@ -1,0 +1,49 @@
+@startuml study dashboard phase 2 concept changes
+
+class ConfigManager {
+  - end_date : datetime
+  - weekly_hours : int
+  - remaining_courses : int
+  - <back:yellow> hours_per_course
+  --
+  + load_config() : void
+  + save_config() : void
+  + edit_config(end_date: datetime, weekly_hours: int, remaining_courses: int) : void
+  + is_config_complete() : bool
+}
+
+class CourseManager {
+  - remaining_courses : int
+  --
+  + complete_course() : void
+  + calculate_current_progress() : float
+}
+
+class ProgressCalculator {
+  - weekly_hours : int
+  - remaining_courses : int
+  - end_date : datetime
+  - <back:yellow> hours_per_course
+  --
+  + calculate_estimated_end_date() : datetime
+  + check_schedule_status() : str
+}
+
+class DashInterface {
+  - app : Dash
+  - config_manager : ConfigManager
+  - course_manager : CourseManager
+  - progress_calculator : ProgressCalculator
+  --
+  + open_config_editor() : void
+  + render_dashboard() : void
+  + <back:yellow> update_dashboard() : void
+  + <back:yellow> toogle_modal_visibility() : void
+  + <back:yellow> create_circle_figure() : void
+}
+
+DashInterface --> ConfigManager
+DashInterface --> CourseManager
+DashInterface --> ProgressCalculator
+
+@enduml
