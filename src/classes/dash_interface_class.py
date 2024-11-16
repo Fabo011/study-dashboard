@@ -16,34 +16,6 @@ class DashInterface:
 
     def render_dashboard(self):
         """Sets up the layout and initial callbacks for the Dash app."""
-        # Fetch configuration values
-        config = self.config_manager
-        config_values = {
-            "Ende Datum vom Vertrag": config.end_date.strftime('%d.%m.%Y') if config.end_date else "Noch nicht definiert",
-            "Wöchentlich verfügbare Stunden": config.weekly_hours if config.weekly_hours else "Noch nicht definiert",
-            "Noch zu absolvierende Kurse": config.remaining_courses if config.remaining_courses else "Noch nicht definiert",
-            "Maximale Kursanzahl": config.max_courses if config.max_courses else "Noch nicht definiert",
-            "Stundenanzahl pro Kurs": config.hours_per_course if config.hours_per_course else "Noch nicht definiert"
-        }
-
-        # Create a Div for displaying configuration values
-        config_display = html.Div(
-           [
-               html.H3("Deine Konfiguration", style={'text-align': 'center', 'margin-bottom': '10px'}),
-               html.Ul(
-                   [
-                       html.Li(
-                           html.Span([
-                               html.Span(f"{key}: ", style={'font-weight': 'normal'}),
-                               html.Span(f"{value}", style={'font-weight': 'bold'})
-                           ])
-                       ) for key, value in config_values.items()
-                   ],
-                   style={'list-style-type': 'none', 'padding': '0', 'font-size': '1.1rem', 'text-align': 'left'}
-               )
-           ],
-           style={'margin-bottom': '20px', 'text-align': 'center', 'background-color': '#f9f9f9', 'padding': '15px', 'border-radius': '8px'}
-        )       
 
         self.app.layout = html.Div([
             html.H1("Study Dashboard", style={'text-align': 'center'}),
@@ -58,7 +30,7 @@ class DashInterface:
 
                 html.Div([
                     # Insert configuration display above the buttons
-                    config_display,
+                    html.Div(id="config-data", style={'text-align': 'center'}),
 
                     # Page buttons
                     html.Button("Kurs abschließen", id="complete-course-button", className="page-buttons"),
@@ -72,6 +44,7 @@ class DashInterface:
 
         self.app.callback(
             Output("schedule-status", "children"),
+            Output("config-data", "children"),
             Output("circle-visualization", "figure"),
             Output("config-save-output", "children"),
             Output("study-status-circle", "children"),
@@ -153,7 +126,6 @@ class DashInterface:
               try:
                   self.config_manager.edit_config(end_date, int(weekly_hours), int(max_courses), float(hours_per_course))
                   message = "Konfiguration erfolgreich gespeichert."
-                  # Reload the config to reflect changes immediately
                   self.config_manager.load_config()  # Reload configuration
               except ValueError:
                   message = "Error: Konfiguration konnte nicht gespeichert werden."
@@ -165,8 +137,15 @@ class DashInterface:
               'width': '30px', 'height': '30px', 'borderRadius': '50%',
               'backgroundColor': 'green' if estimated_end <= self.config_manager.end_date else 'red'
           })
+         
+          config_data = html.Div([
+            html.Div(f"Enddatum: {self.config_manager.end_date}", style={'margin-bottom': '10px'}),
+            html.Div(f"Wöchentlich verfügbare Stunden für das Studium: {self.config_manager.weekly_hours}", style={'margin-bottom': '10px'}),
+            html.Div(f"Maximum Anzahl an Kurse : {self.config_manager.max_courses}", style={'margin-bottom': '10px'}),
+            html.Div(f"Stunden pro Kurs: {self.config_manager.hours_per_course}", style={'margin-bottom': '10px'}),
+          ], style={'text-align': 'center', 'padding': '10px', 'border': '1px solid #ddd', 'border-radius': '5px', 'background-color': '#f9f9f9'})
   
-      return status, figure, message, study_status_circle, modal_style
+      return status, config_data, figure, message, study_status_circle, modal_style
 
     def toggle_modal_visibility(self, n_clicks_edit, n_clicks_save, n_clicks_close, modal_visible):
         ctx = dash.callback_context
