@@ -19,7 +19,7 @@ class ProgressCalculator:
         estimated_end = self.calculate_estimated_end_date()
         if estimated_end and self.config_manager.end_date:
             if estimated_end <= self.config_manager.end_date:
-                return f"On track! Expected finish date: {estimated_end.strftime('%Y-%m-%d')}."
+                return f"Auf einem Gutem Weg! Vorraussuchter Abschluss: {estimated_end.strftime('%d.%m.%Y')}"
             else:
-                return f"Not on time! Expected finish date: {estimated_end.strftime('%Y-%m-%d')}."
-        return "Configuration data is incomplete."
+                return f"Nicht pünktlich! Vorraussuchter Abschluss: {estimated_end.strftime('%d.%m.%Y')}"
+        return "Konfiguration ist nicht komplett."
