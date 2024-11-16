@@ -11,30 +11,30 @@ class DashInterface:
         self.config_manager = ConfigManager()
         self.course_manager = CourseManager(self.config_manager)
         self.progress_calculator = ProgressCalculator(self.config_manager, self.course_manager)
-        self.app = dash.Dash(__name__)
+        self.app = dash.Dash()
         self.render_dashboard()
 
     def render_dashboard(self):
         """Sets up the layout and initial callbacks for the Dash app."""
         self.app.layout = html.Div([
-            html.H1("Study Dashboard", style={'text-align': 'center'}),
-            dcc.Store(id="modal-visible", data=False),
-
-            html.Div([
-                html.Div([
-                    dcc.Graph(id="circle-visualization", style={'width': '100%'}),
-                    html.Div(id="study-status-circle", style={'text-align': 'center', }),
-                    html.Div(id="schedule-status", style={'text-align': 'center', 'font-size': '1.2rem', 'margin-top': '-25px'})
-                ], style={'width': '50%', 'float': 'left'}),
-
-                html.Div([
-                    html.Button("Kurs abschließen", id="complete-course-button", style={'display': 'block', 'margin': '20px auto'}),
-                    html.Button("Konfiguration speichern und editieren", id="edit-config-button", style={'display': 'block', 'margin': '20px auto'}),
-                    self.open_config_editor()
-                ], style={'width': '40%', 'float': 'right', 'text-align': 'center'}),
-            ], style={'width': '80%', 'margin': 'auto', 'display': 'flex', 'justify-content': 'space-between'}),
-            
-            dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
+          html.H1("Study Dashboard", style={'text-align': 'center'}),
+          dcc.Store(id="modal-visible", data=False),
+  
+          html.Div([
+              html.Div([
+                  dcc.Graph(id="circle-visualization", style={'width': '100%'}),
+                  html.Div(id="study-status-circle", style={'text-align': 'center'}),
+                  html.Div(id="schedule-status", style={'text-align': 'center', 'font-size': '1.2rem', 'margin-top': '-25px'})
+              ], style={'width': '50%', 'float': 'left'}),
+  
+              html.Div([
+                  html.Button("Kurs abschließen", id="complete-course-button", className="page-buttons"),
+                  html.Button("Konfiguration speichern und editieren", id="edit-config-button", className="page-buttons"),
+                  self.open_config_editor()
+              ], style={'width': '40%', 'float': 'right', 'text-align': 'center'}),
+          ], style={'width': '80%', 'margin': 'auto', 'display': 'flex', 'justify-content': 'space-between'}),
+          
+          dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
         ])
 
         self.app.callback(
@@ -66,24 +66,39 @@ class DashInterface:
         )(self.toggle_modal_visibility)
 
     def open_config_editor(self):
-        return html.Div([
-            html.Div(id="config-modal", children=[
-                html.Div([
-                    html.H2("Konfiguration"),
-                    html.Label("Abschluss Datum vom Studienvertrag (YYYY-MM-DD):"),
-                    dcc.Input(id="end-date-input", type="text", value=self.config_manager.end_date.strftime('%Y-%m-%d') if self.config_manager.end_date else ""),
-                    html.Label("Wöchentlich verfügbare Stunden für das Studium:"),
-                    dcc.Input(id="weekly-hours-input", type="number", value=self.config_manager.weekly_hours),
-                    html.Label("Maximum Anzahl an Kurse (zb. Bachelor = 35):"),
-                    dcc.Input(id="max-courses-input", type="number", value=self.config_manager.max_courses),
-                    html.Label("Stunden die pro Modul gebraucht werden:"),
-                    dcc.Input(id="hours-per-course-input", type="number", value=self.config_manager.hours_per_course, step=0.1),
-                    html.Button("Speichern", id="save-config-button", style={'margin-top': '10px'}),
-                    html.Button("Schließen", id="close-config-button", style={'margin-top': '10px'}),
-                    html.Div(id="config-save-output", style={'margin-top': '10px'})
-                ], style={'padding': '20px', 'border': '1px solid black', 'backgroundColor': 'white', 'width': '300px', 'margin': 'auto'}),
-            ], style={'display': 'none', 'position': 'fixed', 'top': '50%', 'left': '50%', 'transform': 'translate(-50%, -50%)', 'background': 'rgba(0,0,0,0.6)', 'padding': '20px'})
-        ])
+      return html.Div([
+          html.Div(id="config-modal", children=[
+              html.Div([
+                  html.H2("Konfiguration", style={'text-align': 'center', 'color': '#333', 'margin-bottom': '20px'}),
+                  
+                  html.Label("Abschluss Datum vom Studienvertrag (YYYY-MM-DD):", style={'font-weight': 'bold', 'margin-top': '15px'}),
+                  dcc.Input(id="end-date-input", type="text", value=self.config_manager.end_date.strftime('%Y-%m-%d') if self.config_manager.end_date else "", style={'width': '100%', 'padding': '8px', 'border': '1px solid #ddd', 'border-radius': '5px', 'margin-top': '8px'}),
+  
+                  html.Label("Wöchentlich verfügbare Stunden für das Studium:", style={'font-weight': 'bold', 'margin-top': '15px'}),
+                  dcc.Input(id="weekly-hours-input", type="number", value=self.config_manager.weekly_hours, style={'width': '100%', 'padding': '8px', 'border': '1px solid #ddd', 'border-radius': '5px', 'margin-top': '8px'}),
+  
+                  html.Label("Maximum Anzahl an Kurse (zb. Bachelor = 35):", style={'font-weight': 'bold', 'margin-top': '15px'}),
+                  dcc.Input(id="max-courses-input", type="number", value=self.config_manager.max_courses, style={'width': '100%', 'padding': '8px', 'border': '1px solid #ddd', 'border-radius': '5px', 'margin-top': '8px'}),
+  
+                  html.Label("Stunden die pro Modul gebraucht werden:", style={'font-weight': 'bold', 'margin-top': '15px'}),
+                  dcc.Input(id="hours-per-course-input", type="number", value=self.config_manager.hours_per_course, step=0.1, style={'width': '100%', 'padding': '8px', 'border': '1px solid #ddd', 'border-radius': '5px', 'margin-top': '8px'}),
+  
+                  html.Div([
+                      html.Button("Speichern", id="save-config-button", style={
+                          'background-color': '#28a745', 'color': 'white', 'padding': '10px 20px', 'border': 'none', 'border-radius': '5px', 'cursor': 'pointer', 'margin-top': '20px'
+                      }),
+                      html.Button("Schließen", id="close-config-button", style={
+                          'background-color': '#dc3545', 'color': 'white', 'padding': '10px 20px', 'border': 'none', 'border-radius': '5px', 'cursor': 'pointer', 'margin-top': '20px', 'margin-left': '10px'
+                      })
+                  ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'}),
+                  
+                  html.Div(id="config-save-output", style={'margin-top': '10px', 'text-align': 'center', 'font-size': '1.2rem', 'color': 'green'})
+              ], style={
+                  'padding': '30px', 'border-radius': '10px', 'background-color': 'white', 'width': '400px', 'box-shadow': '0 4px 8px rgba(0, 0, 0, 0.2)', 'text-align': 'left'
+              }),
+          ], style={'display': 'none', 'position': 'fixed', 'top': '50%', 'left': '50%', 'transform': 'translate(-50%, -50%)', 'background': 'rgba(0, 0, 0, 0.5)', 'padding': '10px', 'z-index': 1000})
+      ])
+
 
     def update_dashboard(self, n_clicks_complete, n_clicks_save, n_clicks_edit, n_clicks_close, n_intervals, modal_visible, end_date, weekly_hours, max_courses, hours_per_course):
         ctx = dash.callback_context

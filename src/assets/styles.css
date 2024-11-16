@@ -1,0 +1,17 @@
+.page-buttons {
+    display: block;
+    margin: 20px auto;
+    background-color: #28a745;
+    color: white; 
+    width: 80%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.page-buttons:hover {
+    background-color: #218838;
+}
