@@ -1,4 +1,4 @@
-@startuml study dashboard phase 2 final
+@startuml study_dashboard_phase_2_final
 
 class ConfigManager {
   - end_date : datetime
@@ -38,12 +38,14 @@ class DashInterface {
   + open_config_editor() : void
   + render_dashboard() : void
   + update_dashboard() : void
-  + toogle_modal_visibility() : void
+  + toggle_modal_visibility() : void
   + create_circle_figure() : void
 }
 
-DashInterface --> ConfigManager
-DashInterface --> CourseManager
-DashInterface --> ProgressCalculator
+DashInterface --> ConfigManager : Uses
+DashInterface --> CourseManager : Uses
+DashInterface --> ProgressCalculator : Uses
+ConfigManager --> ProgressCalculator : Provides data for progress calculation
+CourseManager --> ConfigManager : Updates remaining courses in config
 
 @enduml
